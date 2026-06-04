@@ -1,0 +1,219 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Home">
+  <div class="hero">
+    <div class="container hero-inner">
+      <div class="hero-tag">Inteligência de mercado · Atualizado diariamente</div>
+      <h1 class="hero-titulo">
+        O mercado de frotas,<br/>
+        <span class="destaque">resumido pra você.</span>
+      </h1>
+      <p class="hero-desc">
+        Atualizações Frotásticas é um briefing diário automático que monitora regulações, 
+        concorrentes e tendências do setor de gestão de frotas — para que o time Frota 162 
+        tome decisões mais informadas, todos os dias.
+      </p>
+      <div class="hero-ctas">
+        <a href="/mercado" class="btn-primario">Ver mercado de hoje</a>
+        <a href="/orgaos-publicos" class="btn-secundario">Atualizações regulatórias</a>
+      </div>
+    </div>
+  </div>
+
+  <section class="secoes">
+    <div class="container">
+      <h2 class="secoes-titulo">O que você encontra aqui</h2>
+      <div class="secoes-grid">
+        <a href="/orgaos-publicos" class="secao-card">
+          <div class="secao-icon">🏛️</div>
+          <h3>Órgãos Públicos</h3>
+          <p>Serpro, Senatran e Governo Federal. Mudanças regulatórias e legislativas que impactam operações de frota no Brasil.</p>
+          <span class="secao-link">Ver atualizações →</span>
+        </a>
+
+        <a href="/mercado" class="secao-card">
+          <div class="secao-icon">📡</div>
+          <h3>Mercado</h3>
+          <p>Movimentos de concorrentes nacionais e internacionais. Lançamentos, parcerias e tendências tecnológicas em frotas.</p>
+          <span class="secao-link">Ver mercado →</span>
+        </a>
+
+        <div class="secao-card em-breve">
+          <div class="secao-icon">💸</div>
+          <h3>Startups / VC <span class="badge">Em breve</span></h3>
+          <p>Captações, fusões e novos players no ecossistema de mobilidade e logística no Brasil e globalmente.</p>
+        </div>
+
+        <div class="secao-card em-breve">
+          <div class="secao-icon">⚡</div>
+          <h3>Atualizações do Sistema <span class="badge">Em breve</span></h3>
+          <p>Atualizações internas da plataforma Frota 162, direto dos canais do Slack.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .hero {
+    background: var(--cinza-claro);
+    padding: 5rem 0 4rem;
+    border-bottom: 1px solid var(--cinza-medio);
+  }
+
+  .hero-inner {
+    max-width: 700px;
+  }
+
+  .hero-tag {
+    display: inline-block;
+    background: var(--laranja-claro);
+    color: var(--laranja-escuro);
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.3rem 0.8rem;
+    border-radius: 999px;
+    margin-bottom: 1.5rem;
+    font-family: var(--fonte-corpo);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .hero-titulo {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    line-height: 1.15;
+    margin-bottom: 1.5rem;
+    color: var(--texto);
+  }
+
+  .destaque {
+    color: var(--laranja);
+  }
+
+  .hero-desc {
+    font-size: 1.1rem;
+    line-height: 1.7;
+    color: var(--texto-suave);
+    margin-bottom: 2rem;
+    max-width: 580px;
+  }
+
+  .hero-ctas {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .btn-primario {
+    background: var(--laranja);
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-family: var(--fonte-corpo);
+    font-size: 0.95rem;
+    transition: background 0.2s;
+    text-decoration: none;
+  }
+
+  .btn-primario:hover {
+    background: var(--laranja-escuro);
+    color: white;
+  }
+
+  .btn-secundario {
+    background: white;
+    color: var(--laranja);
+    border: 2px solid var(--laranja);
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-family: var(--fonte-corpo);
+    font-size: 0.95rem;
+    transition: all 0.2s;
+    text-decoration: none;
+  }
+
+  .btn-secundario:hover {
+    background: var(--laranja-claro);
+  }
+
+  .secoes {
+    padding: 4rem 0;
+  }
+
+  .secoes-titulo {
+    font-size: 1.5rem;
+    margin-bottom: 2rem;
+    color: var(--texto);
+  }
+
+  .secoes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+  }
+
+  .secao-card {
+    border: 1px solid var(--cinza-medio);
+    border-radius: 12px;
+    padding: 1.75rem;
+    text-decoration: none;
+    color: var(--texto);
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    background: white;
+  }
+
+  .secao-card:hover:not(.em-breve) {
+    border-color: var(--laranja);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(249, 115, 22, 0.1);
+  }
+
+  .secao-card.em-breve {
+    opacity: 0.6;
+    cursor: default;
+  }
+
+  .secao-icon {
+    font-size: 2rem;
+  }
+
+  .secao-card h3 {
+    font-size: 1.1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .secao-card p {
+    font-size: 0.9rem;
+    color: var(--texto-suave);
+    line-height: 1.6;
+    flex: 1;
+  }
+
+  .secao-link {
+    font-size: 0.85rem;
+    color: var(--laranja);
+    font-weight: 600;
+    margin-top: auto;
+  }
+
+  .badge {
+    font-size: 0.65rem;
+    background: var(--cinza-medio);
+    color: var(--texto-suave);
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    font-weight: 400;
+    font-family: var(--fonte-corpo);
+  }
+</style>

@@ -1,0 +1,70 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('orgaosPublicos'))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+---
+
+<BaseLayout title="Órgãos Públicos">
+  <div class="container secao-header">
+    <div class="secao-icon">🏛️</div>
+    <div>
+      <h1>Órgãos Públicos</h1>
+      <p class="secao-desc">Mudanças regulatórias e legislativas que impactam operações de frota no Brasil. Fontes: Serpro, Senatran, Governo Federal.</p>
+    </div>
+  </div>
+
+  <div class="container">
+    {posts.length === 0 ? (
+      <div class="vazio">
+        <p>Nenhuma atualização ainda. O agente roda diariamente às 7h.</p>
+      </div>
+    ) : (
+      <div class="posts-grid">
+        {posts.map((post) => (
+          <a href={`/orgaos-publicos/${post.id}`} class="post-card">
+            <div class="data">{post.data.pubDate.toLocaleDateString('pt-BR')}</div>
+            <h3>{post.data.title}</h3>
+            <p>{post.data.description}</p>
+          </a>
+        ))}
+      </div>
+    )}
+  </div>
+</BaseLayout>
+
+<style>
+  .secao-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+    padding-top: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 1px solid var(--cinza-medio);
+    margin-bottom: 2rem;
+  }
+
+  .secao-icon {
+    font-size: 3rem;
+    line-height: 1;
+  }
+
+  h1 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .secao-desc {
+    color: var(--texto-suave);
+    font-size: 1rem;
+    line-height: 1.6;
+    max-width: 600px;
+  }
+
+  .vazio {
+    text-align: center;
+    padding: 4rem 0;
+    color: var(--texto-suave);
+  }
+</style>
