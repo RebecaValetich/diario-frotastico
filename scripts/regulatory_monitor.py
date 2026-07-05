@@ -161,6 +161,7 @@ REJEITAR obrigatoriamente:
 - Analises, opinioes ou reportagens de veiculos privados (Diario do Transporte, Logweb, etc.) que comentam sobre o setor sem anunciar ato oficial
 - Noticias de empresas privadas, sindicatos ou associacoes (mesmo que relacionadas a transporte)
 - Conteudo de mercado, tecnologia ou competidores
+- Atos oficiais cujo proprio titulo ou texto mencione uma data de publicacao/assinatura antiga (ex: "Portaria no 109 de 13 de junho de 2018"). A data que importa e a do ATO EM SI, nao a data em que a noticia foi indexada ou republicada — um site pode reproduzir ou citar uma norma antiga como se fosse atual. Se o titulo ou o texto trouxer um ano anterior ao ano corrente, rejeite, mesmo que o feed marque a noticia como recente
 
 ACEITAR apenas:
 - Resolucoes, portarias, instrucoes normativas publicadas por orgaos oficiais
