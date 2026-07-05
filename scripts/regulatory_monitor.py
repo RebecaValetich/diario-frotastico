@@ -9,12 +9,32 @@ import json
 import requests
 import xml.etree.ElementTree as ET
 from bs4 import BeautifulSoup
-from datetime import datetime
+from datetime import datetime, timezone
+from dateutil import parser as date_parser
 from dotenv import load_dotenv
 import anthropic
 from urllib.parse import quote
 
 load_dotenv()
+
+JANELA_HORAS = 24  # só considera notícias publicadas nas últimas N horas
+
+
+def dentro_da_janela(data_str: str, horas: int = JANELA_HORAS) -> bool:
+    """Retorna True se a notícia foi publicada dentro da janela de recência.
+    Se a data não vier preenchida ou não for parseável, deixa passar (não exclui às cegas)."""
+    if not data_str:
+        return True
+    try:
+        data_pub = date_parser.parse(data_str)
+        if data_pub.tzinfo is None:
+            data_pub = data_pub.replace(tzinfo=timezone.utc)
+        agora = datetime.now(timezone.utc)
+        delta_horas = (agora - data_pub).total_seconds() / 3600
+        return delta_horas <= horas
+    except Exception:
+        return True
+
 
 FONTES_OFICIAIS = [
     {
@@ -353,6 +373,12 @@ def main():
                 print(f"   Erro: {e}")
 
     print(f"   {len(todas)} itens coletados no total (feeds + Google News).")
+
+    print(f"   Filtrando por recência (últimas {JANELA_HORAS}h)...")
+    antes = len(todas)
+    todas = [n for n in todas if dentro_da_janela(n.get('data', ''))]
+    print(f"   {antes - len(todas)} descartados por serem antigos.")
+
     print("   Filtrando e sintetizando com Claude...")
 
     noticias_filtradas = sintetizar_com_claude(todas)

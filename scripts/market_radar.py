@@ -10,12 +10,32 @@ import json
 import requests
 import xml.etree.ElementTree as ET
 from bs4 import BeautifulSoup
-from datetime import datetime
+from datetime import datetime, timezone
+from dateutil import parser as date_parser
 from dotenv import load_dotenv
 import anthropic
 from urllib.parse import quote, urljoin
 
 load_dotenv()
+
+JANELA_HORAS = 24  # só considera notícias publicadas nas últimas N horas
+
+
+def dentro_da_janela(data_str: str, horas: int = JANELA_HORAS) -> bool:
+    """Retorna True se a notícia foi publicada dentro da janela de recência.
+    Se a data não vier preenchida ou não for parseável, deixa passar (não exclui às cegas)."""
+    if not data_str:
+        return True
+    try:
+        data_pub = date_parser.parse(data_str)
+        if data_pub.tzinfo is None:
+            data_pub = data_pub.replace(tzinfo=timezone.utc)
+        agora = datetime.now(timezone.utc)
+        delta_horas = (agora - data_pub).total_seconds() / 3600
+        return delta_horas <= horas
+    except Exception:
+        return True
+
 
 TERMOS_MERCADO = [
     "gestão de frotas Brasil",
@@ -481,6 +501,14 @@ def main():
         noticias_concorrentes.extend(buscar_blog_concorrente(c))
 
     print(f"   {len(noticias_mercado)} notícias de mercado, {len(noticias_concorrentes)} de concorrentes.")
+
+    print(f"   Filtrando por recência (últimas {JANELA_HORAS}h)...")
+    antes_mercado, antes_concorrentes = len(noticias_mercado), len(noticias_concorrentes)
+    noticias_mercado = [n for n in noticias_mercado if dentro_da_janela(n.get('data', ''))]
+    noticias_concorrentes = [n for n in noticias_concorrentes if dentro_da_janela(n.get('data', ''))]
+    print(f"   {antes_mercado - len(noticias_mercado)} descartadas por serem antigas (mercado), "
+          f"{antes_concorrentes - len(noticias_concorrentes)} (concorrentes).")
+
     print("   Filtrando e sintetizando com Claude...")
 
     noticias_filtradas = sintetizar_com_claude(noticias_mercado, noticias_concorrentes)
