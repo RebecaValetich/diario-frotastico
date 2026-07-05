@@ -2,69 +2,470 @@
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import { getCollection } from 'astro:content';
 
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+function tempoRelativo(date: Date): string {
+  const agora = new Date();
+  const diffMs = agora.getTime() - date.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffHoras = Math.floor(diffMs / 3600000);
+  const diffDias = Math.floor(diffMs / 86400000);
+  if (diffMin < 1) return 'agora';
+  if (diffMin < 60) return `há ${diffMin} min`;
+  if (diffHoras < 24) return `há ${diffHoras}h`;
+  if (diffDias === 1) return 'ontem';
+  return `há ${diffDias} dias`;
+}
+
 const posts = (await getCollection('orgaosPublicos'))
   .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+const destaque = posts[0];
+const recentes = posts.slice(1);
+
+const maisRecente = posts[0]?.data.pubDate;
+const fontes = [...new Set(posts.map(p => p.data.fonte).filter(Boolean))];
 ---
 
 <BaseLayout title="Órgãos Públicos">
-  <div class="container secao-header">
-    <div class="secao-icon">🏛️</div>
-    <div>
-      <h1>Órgãos Públicos</h1>
-      <p class="secao-desc">Mudanças regulatórias e legislativas que impactam operações de frota no Brasil. Fontes: Serpro, Senatran, Governo Federal.</p>
-    </div>
-  </div>
+  <div class="pagina">
 
-  <div class="container">
+    <header class="secao-header">
+      <span class="secao-label">SEÇÃO</span>
+      <h1>Órgãos Públicos</h1>
+      <p class="secao-desc">Mudanças regulatórias e legislativas que impactam operações de frota — ANTT, CONTRAN, Senatran</p>
+      {posts.length > 0 && (
+        <p class="secao-stats">
+          <strong>{posts.length}</strong> artigos disponíveis
+          <span class="sep">·</span>
+          atualizado {tempoRelativo(maisRecente)}
+        </p>
+      )}
+      <div class="linha-grossa"></div>
+    </header>
+
     {posts.length === 0 ? (
       <div class="vazio">
         <p>Nenhuma atualização ainda. O agente roda diariamente às 7h.</p>
       </div>
     ) : (
-      <div class="posts-grid">
-        {posts.map((post) => (
-          <a href={`/orgaos-publicos/${post.id}`} class="post-card">
-            <div class="data">{post.data.pubDate.toLocaleDateString('pt-BR')}</div>
-            <h3>{post.data.title}</h3>
-            <p>{post.data.description}</p>
-          </a>
-        ))}
+      <div class="corpo">
+
+        <a
+          href={`${base}/orgaos-publicos/${destaque.id}`}
+          class:list={["destaque", !destaque.data.imageUrl && "sem-imagem"]}
+        >
+          {destaque.data.imageUrl && (
+            <div class="destaque-img">
+              <img src={destaque.data.imageUrl} alt={destaque.data.title} loading="eager" />
+              <span class="destaque-badge">REGULATÓRIO</span>
+            </div>
+          )}
+          <div class="destaque-conteudo">
+            <span class="destaque-label">DESTAQUE DA SEÇÃO</span>
+            <h2>{destaque.data.title}</h2>
+            {destaque.data.description && <p class="destaque-desc">{destaque.data.description}</p>}
+            <span class="atrib">
+              {destaque.data.fonte && <span class="fonte-laranja">{destaque.data.fonte}</span>}
+              <span class="ponto">·</span>
+              {tempoRelativo(destaque.data.pubDate)}
+            </span>
+          </div>
+        </a>
+
+        {recentes.length > 0 && (
+          <div class="layout-inferior">
+
+            <div class="lista-col">
+              <div class="lista-header">
+                <span class="lista-titulo">MAIS RECENTES</span>
+                <div class="lista-linha"></div>
+              </div>
+
+              <div class="lista">
+                {recentes.map((post) => (
+                  <a
+                    href={`${base}/orgaos-publicos/${post.id}`}
+                    class:list={["item", !post.data.imageUrl && "sem-imagem"]}
+                  >
+                    {post.data.imageUrl && (
+                      <div class="item-img">
+                        <img src={post.data.imageUrl} alt={post.data.title} loading="lazy" />
+                      </div>
+                    )}
+                    <div class="item-conteudo">
+                      <div class="item-tags">
+                        <span class="tag-categoria">REGULATÓRIO</span>
+                        {post.data.fonte && <span class="fonte-laranja">{post.data.fonte}</span>}
+                        <span class="ponto">·</span>
+                        <span class="item-tempo">{tempoRelativo(post.data.pubDate)}</span>
+                      </div>
+                      <h3>{post.data.title}</h3>
+                      {post.data.description && <p class="item-desc">{post.data.description}</p>}
+                    </div>
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            <aside class="sidebar">
+              <div class="sidebar-bloco">
+                <span class="sidebar-titulo">FILTRAR POR TIPO</span>
+                <div class="filtros">
+                  <button class="filtro ativo">Tudo</button>
+                  <button class="filtro">Resolução</button>
+                  <button class="filtro">Portaria</button>
+                  <button class="filtro">Legislação</button>
+                  <button class="filtro">Multas</button>
+                  <button class="filtro">CNH</button>
+                </div>
+              </div>
+
+              {fontes.length > 0 && (
+                <div class="sidebar-bloco">
+                  <span class="sidebar-titulo">FONTES ACOMPANHADAS</span>
+                  <ul class="fontes-lista">
+                    {fontes.map((f) => (
+                      <li class="fonte-item">
+                        <span class="fonte-dot"></span>
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </aside>
+
+          </div>
+        )}
+
       </div>
     )}
   </div>
 </BaseLayout>
 
 <style>
-  .secao-header {
-    display: flex;
-    align-items: flex-start;
-    gap: 1.5rem;
-    padding-top: 3rem;
-    padding-bottom: 2rem;
-    border-bottom: 1px solid var(--cinza-medio);
-    margin-bottom: 2rem;
+  .pagina {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2.5rem 2.5rem 4rem;
   }
 
-  .secao-icon {
-    font-size: 3rem;
+  .secao-label {
+    display: block;
+    font-family: var(--fonte-corpo);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--laranja);
+    margin-bottom: 0.5rem;
+  }
+
+  .secao-header h1 {
+    font-family: var(--fonte-titulo);
+    font-size: 3.6rem;
+    font-weight: 900;
+    color: var(--texto);
     line-height: 1;
-  }
-
-  h1 {
-    font-size: 2rem;
     margin-bottom: 0.5rem;
   }
 
   .secao-desc {
+    font-family: var(--fonte-corpo);
+    font-size: 1.08rem;
     color: var(--texto-suave);
-    font-size: 1rem;
+    margin-bottom: 0.4rem;
+  }
+
+  .secao-stats {
+    font-family: var(--fonte-corpo);
+    font-size: 0.94rem;
+    color: var(--texto-suave);
+    margin-bottom: 1.25rem;
+  }
+
+  .secao-stats strong { color: var(--texto); font-weight: 600; }
+  .sep { margin: 0 0.4rem; opacity: 0.4; }
+
+  .linha-grossa {
+    height: 2px;
+    background: var(--texto);
+    margin-bottom: 1.75rem;
+  }
+
+  .destaque {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.5rem;
+    align-items: start;
+    color: var(--texto);
+    margin-bottom: 2.5rem;
+  }
+
+  .destaque.sem-imagem { grid-template-columns: 1fr; }
+
+  .destaque-img { position: relative; overflow: hidden; }
+
+  .destaque-img img {
+    width: 100%;
+    height: 320px;
+    object-fit: cover;
+    display: block;
+    border-radius: 6px;
+  }
+
+  .img-vazio {
+    width: 100%;
+    height: 320px;
+    background: var(--laranja-claro);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .img-vazio span {
+    font-family: var(--fonte-corpo);
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: var(--laranja-escuro);
+    opacity: 0.5;
+  }
+
+  .destaque-badge {
+    position: absolute;
+    top: 0.75rem;
+    left: 0.75rem;
+    background: var(--laranja);
+    color: white;
+    font-family: var(--fonte-corpo);
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 0.3rem 0.7rem;
+    border-radius: 999px;
+  }
+
+  .destaque-conteudo { padding-top: 0.25rem; }
+
+  .destaque-label {
+    display: block;
+    font-family: var(--fonte-corpo);
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--laranja);
+    margin-bottom: 0.75rem;
+  }
+
+  .destaque h2 {
+    font-family: var(--fonte-titulo);
+    font-size: 2.65rem;
+    font-weight: 900;
+    line-height: 1.15;
+    color: var(--texto);
+    margin-bottom: 1rem;
+    transition: color 0.15s;
+  }
+
+  .destaque:hover h2 { color: var(--laranja-escuro); }
+
+  .destaque-desc {
+    font-family: var(--fonte-corpo);
+    font-size: 1.08rem;
+    color: var(--texto-suave);
     line-height: 1.6;
-    max-width: 600px;
+    margin-bottom: 0.75rem;
+  }
+
+  .atrib {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: var(--fonte-corpo);
+    font-size: 0.9rem;
+    color: var(--texto-suave);
+  }
+
+  .fonte-laranja { color: var(--laranja); font-weight: 500; }
+  .ponto { opacity: 0.35; }
+
+  .layout-inferior {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 3rem;
+    align-items: start;
+  }
+
+  .lista-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .lista-titulo {
+    font-family: var(--fonte-corpo);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--texto-suave);
+    white-space: nowrap;
+  }
+
+  .lista-linha { flex: 1; height: 1px; background: var(--borda); }
+
+  .lista { display: flex; flex-direction: column; }
+
+  .item {
+    display: grid;
+    grid-template-columns: 100px 1fr;
+    gap: 1rem;
+    padding: 1.25rem 0;
+    border-bottom: 1px solid var(--borda);
+    color: var(--texto);
+  }
+
+  .item.sem-imagem { grid-template-columns: 1fr; }
+
+  .item:last-child { border-bottom: none; }
+
+  .item-img { overflow: hidden; border-radius: 4px; }
+
+  .item-img img { width: 100px; height: 70px; object-fit: cover; display: block; }
+
+  .img-vazio-sm {
+    width: 100px;
+    height: 70px;
+    background: var(--laranja-claro);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .img-vazio-sm span {
+    font-family: var(--fonte-corpo);
+    font-size: 0.55rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--laranja-escuro);
+    opacity: 0.5;
+  }
+
+  .item-tags {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.4rem;
+    flex-wrap: wrap;
+  }
+
+  .tag-categoria {
+    font-family: var(--fonte-corpo);
+    font-size: 0.86rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    background: var(--texto);
+    color: var(--bg);
+    padding: 0.15rem 0.5rem;
+    border-radius: 3px;
+  }
+
+  .item-tempo {
+    font-family: var(--fonte-corpo);
+    font-size: 0.86rem;
+    color: var(--texto-suave);
+  }
+
+  .item h3 {
+    font-family: var(--fonte-titulo);
+    font-size: 1.2rem;
+    font-weight: 700;
+    line-height: 1.35;
+    color: var(--texto);
+    margin-bottom: 0.3rem;
+    transition: color 0.15s;
+  }
+
+  .item:hover h3 { color: var(--laranja-escuro); }
+
+  .item-desc {
+    font-family: var(--fonte-corpo);
+    font-size: 0.96rem;
+    color: var(--texto-suave);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 1.75rem;
+    position: sticky;
+    top: 120px;
+  }
+
+  .sidebar-bloco { display: flex; flex-direction: column; gap: 0.75rem; }
+
+  .sidebar-titulo {
+    font-family: var(--fonte-corpo);
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--texto-suave);
+  }
+
+  .filtros { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+  .filtro {
+    font-family: var(--fonte-corpo);
+    font-size: 0.9rem;
+    padding: 0.3rem 0.75rem;
+    border-radius: 999px;
+    border: 1px solid var(--borda);
+    background: var(--bg);
+    color: var(--texto-suave);
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .filtro:hover { border-color: var(--laranja); color: var(--laranja); }
+  .filtro.ativo { background: var(--laranja); color: white; border-color: var(--laranja); }
+
+  .fontes-lista { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; }
+
+  .fonte-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-family: var(--fonte-corpo);
+    font-size: 0.96rem;
+    color: var(--texto-suave);
+  }
+
+  .fonte-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--laranja);
+    flex-shrink: 0;
   }
 
   .vazio {
     text-align: center;
     padding: 4rem 0;
     color: var(--texto-suave);
+    font-family: var(--fonte-corpo);
+  }
+
+  @media (max-width: 900px) {
+    .destaque { grid-template-columns: 1fr; }
+    .layout-inferior { grid-template-columns: 1fr; }
+    .sidebar { position: static; }
   }
 </style>

@@ -1,46 +1,102 @@
 ---
-const { pathname } = Astro.url;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const pathname = Astro.url.pathname.replace(base, '') || '/';
 const isActive = (path: string) => pathname === path || pathname.startsWith(path + '/');
+
+const hoje = new Date().toLocaleDateString('pt-BR', {
+  weekday: 'long',
+  day: '2-digit',
+  month: 'long',
+  year: 'numeric',
+}).toUpperCase();
 ---
 
-<header class="header">
-  <div class="container header-inner">
-    <a href="/" class="logo">
-      <span class="logo-emoji">🚛</span>
-      <span class="logo-text">Atualizações<br/><strong>Frotásticas</strong></span>
-    </a>
+<header class="masthead">
 
-    <nav class="nav">
-      <a href="/" class:list={["nav-link", { active: pathname === '/' }]}>Home</a>
-      <a href="/orgaos-publicos" class:list={["nav-link", { active: isActive('/orgaos-publicos') }]}>Órgãos Públicos</a>
-      <a href="/mercado" class:list={["nav-link", { active: isActive('/mercado') }]}>Mercado</a>
-      <a href="/startups-vc" class:list={["nav-link", { active: isActive('/startups-vc') }]}>
-        Startups/VC
-        <span class="badge">Em breve</span>
-      </a>
-      <a href="/atualizacoes" class:list={["nav-link", { active: isActive('/atualizacoes') }]}>
-        Atualizações do Sistema
-        <span class="badge">Em breve</span>
-      </a>
-    </nav>
+  <div class="top-strip">
+    <span class="top-data">{hoje}</span>
+    <span class="top-edicao">EDIÇÃO DIÁRIA · INTERNO</span>
   </div>
+
+  <div class="logo-area">
+    <a href={`${base}/`} class="logo">
+      <span class="logo-badge">162</span>
+      <span class="logo-titulo">Diário Frotástico</span>
+    </a>
+  </div>
+
+  <div class="linha"></div>
+
+  <nav class="nav-central">
+    <div class="nav-links">
+      <a href={`${base}/`} class:list={["nav-link", { active: pathname === '/' }]}>Home</a>
+      <a href={`${base}/mercado`} class:list={["nav-link", { active: isActive('/mercado') }]}>Mercado</a>
+      <a href={`${base}/orgaos-publicos`} class:list={["nav-link", { active: isActive('/orgaos-publicos') }]}>Órgãos Públicos</a>
+      <a href={`${base}/startups-vc`} class:list={["nav-link", { active: isActive('/startups-vc') }]}>Startups/VC</a>
+      <span class="nav-sep">|</span>
+      <a href={`${base}/faq`} class:list={["nav-link", { active: isActive('/faq') }]}>FAQ</a>
+    </div>
+    <button id="theme-toggle" class="theme-toggle" aria-label="Alternar tema">
+      <span id="theme-icon"></span>
+    </button>
+  </nav>
+
+  <div class="linha"></div>
+
 </header>
 
+<script>
+  const btn = document.getElementById('theme-toggle');
+  const icon = document.getElementById('theme-icon');
+  const html = document.documentElement;
+
+  function atualizarIcone() {
+    const escuro = html.getAttribute('data-theme') === 'dark';
+    if (icon) icon.textContent = escuro ? '☾' : '☀';
+  }
+
+  atualizarIcone();
+
+  if (btn) {
+    btn.addEventListener('click', () => {
+      const atual = html.getAttribute('data-theme');
+      const novo = atual === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', novo);
+      localStorage.setItem('df-theme', novo);
+      atualizarIcone();
+    });
+  }
+</script>
+
 <style>
-  .header {
+  .masthead {
+    background: var(--bg);
+    border-bottom: 1px solid var(--borda);
     position: sticky;
     top: 0;
     z-index: 100;
-    background: white;
-    border-bottom: 2px solid var(--laranja);
-    padding: 1rem 0;
   }
 
-  .header-inner {
+  .top-strip {
     display: flex;
-    align-items: center;
     justify-content: space-between;
-    gap: 2rem;
+    align-items: center;
+    padding: 0.35rem 2rem;
+    border-bottom: 1px solid var(--borda);
+  }
+
+  .top-data, .top-edicao {
+    font-family: var(--fonte-corpo);
+    font-size: 0.63rem;
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    color: var(--texto-suave);
+  }
+
+  .logo-area {
+    display: flex;
+    justify-content: center;
+    padding: 0.9rem 2rem 0.75rem;
   }
 
   .logo {
@@ -48,64 +104,96 @@ const isActive = (path: string) => pathname === path || pathname.startsWith(path
     align-items: center;
     gap: 0.75rem;
     text-decoration: none;
-    color: var(--texto);
   }
 
-  .logo-emoji {
-    font-size: 2rem;
-  }
-
-  .logo-text {
-    font-family: var(--fonte-titulo);
-    font-size: 0.9rem;
-    line-height: 1.3;
-    color: var(--texto-suave);
-  }
-
-  .logo-text strong {
-    font-size: 1.1rem;
-    color: var(--laranja);
-    display: block;
-  }
-
-  .nav {
+  .logo-badge {
+    background: var(--laranja);
+    color: white;
+    font-family: var(--fonte-corpo);
+    font-size: 1rem;
+    font-weight: 700;
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
-    gap: 0.25rem;
-    flex-wrap: wrap;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .logo-titulo {
+    font-family: var(--fonte-titulo);
+    font-size: 1.9rem;
+    font-weight: 900;
+    color: var(--texto);
+    letter-spacing: -0.01em;
+    line-height: 1;
+  }
+
+  .linha {
+    height: 1px;
+    background: var(--borda);
+    margin: 0 2rem;
+  }
+
+  .nav-central {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.45rem 2rem;
+    position: relative;
+  }
+
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 0;
   }
 
   .nav-link {
     font-family: var(--fonte-corpo);
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--texto-suave);
-    padding: 0.4rem 0.75rem;
-    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: 400;
+    color: var(--texto);
+    padding: 0.3rem 0.8rem;
     text-decoration: none;
-    transition: all 0.2s;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
+    transition: color 0.15s;
+    letter-spacing: 0.01em;
   }
 
-  .nav-link:hover {
-    color: var(--laranja);
-    background: var(--laranja-claro);
-  }
+  .nav-link:hover { color: var(--laranja); }
 
   .nav-link.active {
     color: var(--laranja);
-    background: var(--laranja-claro);
-    font-weight: 600;
+    font-weight: 500;
   }
 
-  .badge {
-    font-size: 0.65rem;
-    background: var(--cinza-medio);
+  .nav-sep {
+    color: var(--borda);
+    padding: 0 0.25rem;
+    font-size: 0.85rem;
+    user-select: none;
+  }
+
+  .theme-toggle {
+    position: absolute;
+    right: 2rem;
+    background: none;
+    border: 1px solid var(--borda);
+    border-radius: 50%;
+    width: 26px;
+    height: 26px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 12px;
     color: var(--texto-suave);
-    padding: 0.1rem 0.4rem;
-    border-radius: 999px;
-    font-weight: 400;
+    transition: border-color 0.15s, color 0.15s;
+  }
+
+  .theme-toggle:hover {
+    border-color: var(--laranja);
+    color: var(--laranja);
   }
 </style>

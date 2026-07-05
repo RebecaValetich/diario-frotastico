@@ -1,0 +1,255 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('orgaosPublicos');
+  return posts.map((post) => ({
+    params: { id: post.id },
+    props: post,
+  }));
+}
+
+const post = Astro.props;
+const { Content } = await render(post);
+
+function tempoRelativo(date: Date): string {
+  const agora = new Date();
+  const diffMs = agora.getTime() - date.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffHoras = Math.floor(diffMs / 3600000);
+  const diffDias = Math.floor(diffMs / 86400000);
+  if (diffMin < 1) return 'agora';
+  if (diffMin < 60) return `há ${diffMin} min`;
+  if (diffHoras < 24) return `há ${diffHoras}h`;
+  if (diffDias === 1) return 'ontem';
+  return `há ${diffDias} dias`;
+}
+
+const palavras = (post.body ?? '').trim().split(/\s+/).length;
+const minLeitura = Math.max(1, Math.ceil(palavras / 200));
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+
+<BaseLayout title={post.data.title} description={post.data.description}>
+  <div class="artigo">
+
+    <nav class="breadcrumb">
+      <a href={`${base}/orgaos-publicos`}>Órgãos Públicos</a>
+      <span>›</span>
+      <span>Notícia</span>
+    </nav>
+
+    <header class="artigo-header">
+      <span class="badge">REGULATÓRIO</span>
+      <h1>{post.data.title}</h1>
+      <div class="atrib">
+        {post.data.fonte && <span class="fonte-laranja">{post.data.fonte}</span>}
+        <span class="sep">·</span>
+        <span>{tempoRelativo(post.data.pubDate)}</span>
+        <span class="sep">·</span>
+        <span>{minLeitura} min de leitura</span>
+        <span class="badge-agente">Resumido pelo agente Radar</span>
+      </div>
+    </header>
+
+    {post.data.imageUrl && (
+      <div class="artigo-imagem">
+        <img src={post.data.imageUrl} alt={post.data.title} loading="eager" />
+      </div>
+    )}
+
+    {post.data.description && (
+      <div class="resumo-agente">
+        <span class="resumo-label">RESUMO DO AGENTE</span>
+        <p>{post.data.description}</p>
+      </div>
+    )}
+
+    <div class="prose dropcap">
+      <Content />
+    </div>
+
+    {post.data.linkOriginal && (
+      <div class="link-original">
+        <a href={post.data.linkOriginal} target="_blank" rel="noopener noreferrer">
+          Ler na fonte original →
+        </a>
+      </div>
+    )}
+
+  </div>
+</BaseLayout>
+
+<style>
+  .artigo {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 2rem 2rem 5rem;
+  }
+
+  /* ── Breadcrumb ── */
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: var(--fonte-corpo);
+    font-size: 0.78rem;
+    color: var(--texto-suave);
+    margin-bottom: 2rem;
+  }
+
+  .breadcrumb a { color: var(--laranja); }
+  .breadcrumb a:hover { color: var(--laranja-escuro); }
+
+  /* ── Header ── */
+  .artigo-header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .badge {
+    display: inline-block;
+    background: var(--laranja);
+    color: white;
+    font-family: var(--fonte-corpo);
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    padding: 0.3rem 0.8rem;
+    border-radius: 999px;
+    margin-bottom: 1.25rem;
+  }
+
+  .artigo-header h1 {
+    font-family: var(--fonte-titulo);
+    font-size: 2.6rem;
+    font-weight: 900;
+    line-height: 1.15;
+    color: var(--texto);
+    margin-bottom: 0.875rem;
+  }
+
+  .subtitulo {
+    font-family: var(--fonte-corpo);
+    font-size: 1.05rem;
+    color: var(--texto-suave);
+    line-height: 1.6;
+    max-width: 580px;
+    margin: 0 auto 1.25rem;
+  }
+
+  /* ── Atribuição ── */
+  .atrib {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    font-family: var(--fonte-corpo);
+    font-size: 0.82rem;
+    color: var(--texto-suave);
+  }
+
+  .fonte-laranja { color: var(--laranja); font-weight: 600; }
+  .sep { opacity: 0.35; }
+
+  .badge-agente {
+    background: #DCFCE7;
+    color: #166534;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    margin-left: 0.25rem;
+  }
+
+  /* ── Imagem ── */
+  .artigo-imagem {
+    margin: 2rem 0;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--laranja-claro);
+  }
+
+  .artigo-imagem img {
+    width: 100%;
+    max-height: 420px;
+    object-fit: cover;
+    display: block;
+  }
+
+  /* ── Caixa de resumo ── */
+  .resumo-agente {
+    background: #FFF7ED;
+    border-left: 3px solid var(--laranja);
+    border-radius: 0 6px 6px 0;
+    padding: 1rem 1.25rem;
+    margin: 2rem 0;
+  }
+
+  [data-theme="dark"] .resumo-agente {
+    background: #1c1208;
+  }
+
+  .resumo-label {
+    display: block;
+    font-family: var(--fonte-corpo);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--laranja);
+    margin-bottom: 0.5rem;
+  }
+
+  .resumo-agente p {
+    font-family: var(--fonte-corpo);
+    font-size: 0.9rem;
+    color: var(--texto-suave);
+    line-height: 1.6;
+    margin: 0;
+  }
+
+  /* ── Prose ── */
+  .prose {
+    font-family: var(--fonte-corpo);
+    font-size: 1rem;
+    line-height: 1.8;
+    color: var(--texto);
+  }
+
+  .prose :global(p) { margin-bottom: 1.25rem; }
+  .prose :global(h2) { font-family: var(--fonte-titulo); font-size: 1.4rem; font-weight: 700; margin: 2rem 0 0.75rem; }
+  .prose :global(h3) { font-family: var(--fonte-titulo); font-size: 1.15rem; font-weight: 700; margin: 1.5rem 0 0.5rem; color: var(--laranja-escuro); }
+  .prose :global(strong) { font-weight: 600; }
+  .prose :global(hr) { border: none; border-top: 1px solid var(--borda); margin: 2rem 0; }
+  .prose :global(a) { color: var(--laranja); text-decoration: underline; }
+
+  /* Dropcap */
+  .dropcap :global(p:first-of-type::first-letter) {
+    float: left;
+    font-family: var(--fonte-titulo);
+    font-size: 4rem;
+    font-weight: 900;
+    line-height: 0.75;
+    color: var(--laranja);
+    margin: 0.1em 0.1em 0 0;
+  }
+
+  /* ── Link original ── */
+  .link-original {
+    margin-top: 3rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--borda);
+  }
+
+  .link-original a {
+    font-family: var(--fonte-corpo);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--laranja);
+  }
+
+  .link-original a:hover { color: var(--laranja-escuro); }
+</style>

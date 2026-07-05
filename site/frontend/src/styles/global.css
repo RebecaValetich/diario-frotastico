@@ -1,17 +1,27 @@
-/* Atualizações Frotásticas — Global Styles */
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+/* Diário Frotástico — Global Styles */
 
 :root {
   --laranja: #F97316;
   --laranja-claro: #FED7AA;
   --laranja-escuro: #C2410C;
-  --branco: #FFFFFF;
-  --cinza-claro: #F8F7F5;
-  --cinza-medio: #E5E3DF;
+
+  --bg: #ffffff;
+  --bg-secundario: #F8F7F5;
+  --borda: #E5E3DF;
   --texto: #1A1A1A;
   --texto-suave: #6B6B6B;
-  --fonte-titulo: 'Syne', sans-serif;
+
+  --fonte-titulo: 'Playfair Display', Georgia, serif;
   --fonte-corpo: 'DM Sans', sans-serif;
+}
+
+[data-theme="dark"] {
+  --bg: #0F0F0F;
+  --bg-secundario: #1A1A1A;
+  --borda: #2E2E2E;
+  --texto: #E8E8E8;
+  --texto-suave: #888888;
+  --laranja-claro: #431407;
 }
 
 * {
@@ -22,7 +32,7 @@
 
 html {
   font-family: var(--fonte-corpo);
-  background: var(--branco);
+  background: var(--bg);
   color: var(--texto);
   scroll-behavior: smooth;
 }
@@ -32,13 +42,9 @@ body {
 }
 
 a {
-  color: var(--laranja);
+  color: inherit;
   text-decoration: none;
-  transition: color 0.2s;
-}
-
-a:hover {
-  color: var(--laranja-escuro);
+  transition: color 0.15s;
 }
 
 h1, h2, h3, h4 {
@@ -52,16 +58,15 @@ h1, h2, h3, h4 {
   padding: 0 2rem;
 }
 
-/* Tags de origem */
 .tag-br {
   display: inline-flex;
   align-items: center;
   gap: 0.3rem;
   background: #DCFCE7;
   color: #166534;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 500;
-  padding: 0.2rem 0.6rem;
+  padding: 0.15rem 0.5rem;
   border-radius: 999px;
   font-family: var(--fonte-corpo);
 }
@@ -72,93 +77,41 @@ h1, h2, h3, h4 {
   gap: 0.3rem;
   background: #DBEAFE;
   color: #1E40AF;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 500;
-  padding: 0.2rem 0.6rem;
+  padding: 0.15rem 0.5rem;
   border-radius: 999px;
   font-family: var(--fonte-corpo);
 }
 
-.tag-em-breve {
-  display: inline-flex;
-  align-items: center;
-  background: var(--cinza-medio);
-  color: var(--texto-suave);
-  font-size: 0.75rem;
-  font-weight: 500;
-  padding: 0.2rem 0.6rem;
-  border-radius: 999px;
-  font-family: var(--fonte-corpo);
-}
-
-/* Card de post */
-.post-card {
-  border: 1px solid var(--cinza-medio);
-  border-radius: 12px;
-  padding: 1.5rem;
-  transition: border-color 0.2s, transform 0.2s;
-  background: var(--branco);
-}
-
-.post-card:hover {
-  border-color: var(--laranja);
-  transform: translateY(-2px);
-}
-
-.post-card .data {
-  font-size: 0.8rem;
-  color: var(--texto-suave);
-  margin-bottom: 0.5rem;
-  font-family: var(--fonte-corpo);
-}
-
-.post-card h3 {
-  font-size: 1.1rem;
-  margin-bottom: 0.5rem;
-  color: var(--texto);
-}
-
-.post-card p {
-  font-size: 0.9rem;
-  color: var(--texto-suave);
-  line-height: 1.6;
-}
-
-/* Grid de posts */
-.posts-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1.5rem;
-  margin-top: 2rem;
-}
-
-/* Prose (conteúdo do post) */
 .prose {
-  max-width: 720px;
+  max-width: 680px;
   margin: 0 auto;
-  font-size: 1.05rem;
+  font-size: 1rem;
   line-height: 1.8;
   color: var(--texto);
+  font-family: var(--fonte-corpo);
 }
 
 .prose h2 {
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   margin: 2rem 0 1rem;
-  color: var(--texto);
+  font-family: var(--fonte-titulo);
 }
 
 .prose h3 {
-  font-size: 1.2rem;
-  margin: 1.5rem 0 0.75rem;
+  font-size: 1.1rem;
+  margin: 1.5rem 0 0.5rem;
   color: var(--laranja-escuro);
+  font-family: var(--fonte-titulo);
 }
 
-.prose p {
-  margin-bottom: 1rem;
-}
+.prose p { margin-bottom: 1rem; }
 
 .prose hr {
   border: none;
-  border-top: 1px solid var(--cinza-medio);
+  border-top: 1px solid var(--borda);
   margin: 2rem 0;
 }
+
+.prose strong { font-weight: 600; }

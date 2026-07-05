@@ -1,0 +1,186 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const posts = (await getCollection('mercado'))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+const POR_PAGINA = 8;
+const total = posts.length;
+const totalPaginas = Math.ceil(total / POR_PAGINA);
+const postsPagina = posts.slice(0, POR_PAGINA);
+---
+
+<BaseLayout title="Mercado">
+  <div class="container">
+    <div class="secao-header">
+      <h1>📡 Mercado</h1>
+      <p>Lançamentos, parcerias e movimentos estratégicos de concorrentes nacionais e internacionais no setor de frotas.</p>
+    </div>
+
+    {postsPagina.length === 0 ? (
+      <div class="vazio">
+        <p>Nenhuma notícia ainda. O agente roda diariamente às 7h.</p>
+      </div>
+    ) : (
+      <div class="noticias-grid">
+        {postsPagina.map((post) => (
+          <a href={`/mercado/${post.id}`} class="noticia-card">
+            <div class="noticia-meta">
+              <span class="noticia-fonte">{post.data.fonte || 'Mercado'}</span>
+              <div class="noticia-tags">
+                {post.data.hashtag && <span class="hashtag">{post.data.hashtag}</span>}
+                {post.data.origem === 'internacional' 
+                  ? <span class="tag-origem intl">🌍</span>
+                  : <span class="tag-origem br">🇧🇷</span>
+                }
+              </div>
+            </div>
+            <h2 class="noticia-titulo">{post.data.title}</h2>
+            <p class="noticia-desc">{post.data.description}</p>
+            <div class="noticia-footer">
+              <span class="noticia-data">{post.data.pubDate.toLocaleDateString('pt-BR')}</span>
+            </div>
+          </a>
+        ))}
+      </div>
+    )}
+
+    {totalPaginas > 1 && (
+      <div class="paginacao">
+        <span class="paginacao-info">Página 1 de {totalPaginas}</span>
+      </div>
+    )}
+  </div>
+</BaseLayout>
+
+<style>
+  .container {
+    padding-top: 2rem;
+    padding-bottom: 4rem;
+  }
+
+  .secao-header {
+    border-bottom: 2px solid var(--laranja);
+    padding-bottom: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .secao-header h1 {
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-bottom: 0.4rem;
+    font-family: var(--fonte-titulo);
+  }
+
+  .secao-header p {
+    font-size: 0.875rem;
+    color: var(--texto-suave);
+    font-family: var(--fonte-corpo);
+  }
+
+  .noticias-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1px;
+    background: var(--cinza-medio);
+    border: 1px solid var(--cinza-medio);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .noticia-card {
+    background: white;
+    padding: 1.25rem;
+    text-decoration: none;
+    color: var(--texto);
+    transition: background 0.15s;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .noticia-card:hover {
+    background: #FFFAF7;
+  }
+
+  .noticia-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .noticia-fonte {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--laranja);
+    font-family: var(--fonte-corpo);
+  }
+
+  .noticia-tags {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .hashtag {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: white;
+    background: var(--laranja);
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    font-family: var(--fonte-corpo);
+  }
+
+  .tag-origem {
+    font-size: 0.85rem;
+  }
+
+  .noticia-titulo {
+    font-size: 0.975rem;
+    font-weight: 700;
+    line-height: 1.35;
+    color: var(--texto);
+    font-family: var(--fonte-titulo);
+    flex: 1;
+  }
+
+  .noticia-desc {
+    font-size: 0.825rem;
+    color: var(--texto-suave);
+    line-height: 1.55;
+    font-family: var(--fonte-corpo);
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .noticia-footer {
+    margin-top: auto;
+  }
+
+  .noticia-data {
+    font-size: 0.75rem;
+    color: var(--texto-suave);
+    font-family: var(--fonte-corpo);
+  }
+
+  .vazio {
+    text-align: center;
+    padding: 4rem 0;
+    color: var(--texto-suave);
+  }
+
+  .paginacao {
+    margin-top: 2rem;
+    text-align: center;
+    font-size: 0.875rem;
+    color: var(--texto-suave);
+    font-family: var(--fonte-corpo);
+  }
+</style>

@@ -1,0 +1,87 @@
+name: Daily Briefing — gerar, commitar e publicar
+
+on:
+  schedule:
+    # 07:00 BRT (UTC-3) = 10:00 UTC
+    - cron: '0 10 * * *'
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  gerar-e-publicar:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # As etapas abaixo (rodar os agentes) só executam em cron ou disparo manual —
+      # nunca em push simples, pra não gastar chamada de API à toa num commit qualquer.
+      - name: Setup Python
+        if: github.event_name != 'push'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Instalar dependências Python
+        if: github.event_name != 'push'
+        run: pip install -r scripts/requirements.txt
+
+      - name: Rodar market-radar
+        if: github.event_name != 'push'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python scripts/market_radar.py
+
+      - name: Rodar regulatory-monitor
+        if: github.event_name != 'push'
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: python scripts/regulatory_monitor.py
+
+      - name: Commitar conteúdo novo
+        if: github.event_name != 'push'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add site/frontend/src/content/mercado site/frontend/src/content/orgaos-publicos
+          if git diff --cached --quiet; then
+            echo "Nenhum conteúdo novo hoje."
+          else
+            git commit -m "chore: briefing diário $(date -u +%Y-%m-%d)"
+            git push
+          fi
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Instalar dependências do site
+        working-directory: site/frontend
+        run: npm ci
+
+      - name: Build do site
+        working-directory: site/frontend
+        run: npm run build
+
+      - name: Upload artefato do Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/frontend/dist
+
+      - name: Deploy no GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

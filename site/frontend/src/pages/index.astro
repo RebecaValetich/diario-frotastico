@@ -1,219 +1,412 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+
+function tempoRelativo(date: Date): string {
+  const agora = new Date();
+  const diffMs = agora.getTime() - date.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffHoras = Math.floor(diffMs / 3600000);
+  const diffDias = Math.floor(diffMs / 86400000);
+  if (diffMin < 1) return 'agora';
+  if (diffMin < 60) return `há ${diffMin} min`;
+  if (diffHoras < 24) return `há ${diffHoras}h`;
+  if (diffDias === 1) return 'ontem';
+  return `há ${diffDias} dias`;
+}
+
+const mercadoPosts = (await getCollection('mercado'))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+const orgaosPosts = (await getCollection('orgaosPublicos'))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+const startupsPosts = (await getCollection('startupsVc'))
+  .sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+const postsMarcados = [
+  ...mercadoPosts.map(p => ({ ...p, secao: 'MERCADO', href: `${base}/mercado/${p.id}` })),
+  ...orgaosPosts.map(p => ({ ...p, secao: 'REGULATÓRIO', href: `${base}/orgaos-publicos/${p.id}` })),
+  ...startupsPosts.map(p => ({ ...p, secao: 'STARTUPS', href: `${base}/startups-vc/${p.id}` })),
+].sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+
+const destaque = postsMarcados[0];
+
+const destaqueId = destaque?.id;
+
+const colunas = [
+  {
+    titulo: 'Mercado',
+    desc: 'Concorrentes, logística e o mercado de frotas',
+    href: `${base}/mercado`,
+    posts: mercadoPosts.filter(p => p.id !== destaqueId),
+    makeHref: (id: string) => `${base}/mercado/${id}`,
+  },
+  {
+    titulo: 'Órgãos públicos',
+    desc: 'ANTT, Senatran, Contran e atualizações de leis',
+    href: `${base}/orgaos-publicos`,
+    posts: orgaosPosts.filter(p => p.id !== destaqueId),
+    makeHref: (id: string) => `${base}/orgaos-publicos/${id}`,
+  },
+  {
+    titulo: 'Startups',
+    desc: 'Rodadas, lançamentos e movimentos do ecossistema',
+    href: `${base}/startups-vc`,
+    posts: startupsPosts.filter(p => p.id !== destaqueId),
+    makeHref: (id: string) => `${base}/startups-vc/${id}`,
+  },
+];
 ---
 
 <BaseLayout title="Home">
-  <div class="hero">
-    <div class="container hero-inner">
-      <div class="hero-tag">Inteligência de mercado · Atualizado diariamente</div>
-      <h1 class="hero-titulo">
-        O mercado de frotas,<br/>
-        <span class="destaque">resumido pra você.</span>
-      </h1>
-      <p class="hero-desc">
-        Atualizações Frotásticas é um briefing diário automático que monitora regulações, 
-        concorrentes e tendências do setor de gestão de frotas — para que o time Frota 162 
-        tome decisões mais informadas, todos os dias.
-      </p>
-      <div class="hero-ctas">
-        <a href="/mercado" class="btn-primario">Ver mercado de hoje</a>
-        <a href="/orgaos-publicos" class="btn-secundario">Atualizações regulatórias</a>
-      </div>
-    </div>
+  <div class="capa">
+
+    {destaque && (
+      <section class="bloco-destaque">
+        <a href={destaque.href} class:list={["hero", !destaque.data.imageUrl && "sem-imagem"]}>
+          {destaque.data.imageUrl && (
+            <div class="hero-imagem">
+              <img src={destaque.data.imageUrl} alt={destaque.data.title} loading="eager" />
+              <span class="hero-badge">
+                {destaque.data.hashtag
+                  ? (destaque.data.hashtag as string).replace('#', '').toUpperCase()
+                  : destaque.secao}
+              </span>
+            </div>
+          )}
+          <div class="hero-texto">
+            <span class="hero-label">DESTAQUE DO DIA · {destaque.secao}</span>
+            <h2 class="hero-titulo">{destaque.data.title}</h2>
+            {destaque.data.description && (
+              <p class="hero-desc">{destaque.data.description}</p>
+            )}
+            <span class="atrib">
+              {destaque.data.fonte && <span class="fonte-laranja">{destaque.data.fonte}</span>}
+              <span class="ponto">·</span>
+              {tempoRelativo(destaque.data.pubDate)}
+            </span>
+          </div>
+        </a>
+      </section>
+    )}
+
+    <div class="divisor"></div>
+
+    <section class="bloco-colunas">
+      {colunas.map((col) => (
+        <div class="coluna">
+          <div class="col-header">
+            <a href={col.href} class="col-titulo">{col.titulo}</a>
+            <p class="col-desc">{col.desc}</p>
+          </div>
+
+          {col.posts.length === 0 ? (
+            <p class="sem-conteudo">Em breve — agente em desenvolvimento.</p>
+          ) : (
+            <>
+              <a href={col.makeHref(col.posts[0].id)} class="col-card">
+                {col.posts[0].data.imageUrl && (
+                  <div class="col-card-img">
+                    <img src={col.posts[0].data.imageUrl} alt={col.posts[0].data.title} loading="lazy" />
+                  </div>
+                )}
+                <h3 class="col-card-titulo">{col.posts[0].data.title}</h3>
+                <span class="atrib">
+                  <span class="fonte-laranja">{col.posts[0].data.fonte || col.titulo}</span>
+                  <span class="ponto">·</span>
+                  {tempoRelativo(col.posts[0].data.pubDate)}
+                </span>
+              </a>
+
+              <div class="col-lista">
+                {col.posts.slice(1, 5).map((post) => (
+                  <a href={col.makeHref(post.id)} class="col-item">
+                    <h4 class="col-item-titulo">{post.data.title}</h4>
+                    <span class="atrib">
+                      <span class="fonte-laranja">{post.data.fonte || col.titulo}</span>
+                      <span class="ponto">·</span>
+                      {tempoRelativo(post.data.pubDate)}
+                    </span>
+                  </a>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      ))}
+    </section>
+
   </div>
-
-  <section class="secoes">
-    <div class="container">
-      <h2 class="secoes-titulo">O que você encontra aqui</h2>
-      <div class="secoes-grid">
-        <a href="/orgaos-publicos" class="secao-card">
-          <div class="secao-icon">🏛️</div>
-          <h3>Órgãos Públicos</h3>
-          <p>Serpro, Senatran e Governo Federal. Mudanças regulatórias e legislativas que impactam operações de frota no Brasil.</p>
-          <span class="secao-link">Ver atualizações →</span>
-        </a>
-
-        <a href="/mercado" class="secao-card">
-          <div class="secao-icon">📡</div>
-          <h3>Mercado</h3>
-          <p>Movimentos de concorrentes nacionais e internacionais. Lançamentos, parcerias e tendências tecnológicas em frotas.</p>
-          <span class="secao-link">Ver mercado →</span>
-        </a>
-
-        <div class="secao-card em-breve">
-          <div class="secao-icon">💸</div>
-          <h3>Startups / VC <span class="badge">Em breve</span></h3>
-          <p>Captações, fusões e novos players no ecossistema de mobilidade e logística no Brasil e globalmente.</p>
-        </div>
-
-        <div class="secao-card em-breve">
-          <div class="secao-icon">⚡</div>
-          <h3>Atualizações do Sistema <span class="badge">Em breve</span></h3>
-          <p>Atualizações internas da plataforma Frota 162, direto dos canais do Slack.</p>
-        </div>
-      </div>
-    </div>
-  </section>
 </BaseLayout>
 
 <style>
+  .capa {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0 2.5rem 3rem;
+  }
+
+  /* ── Destaque ── */
+  .bloco-destaque {
+    padding: 2rem 0 1.5rem;
+  }
+
   .hero {
-    background: var(--cinza-claro);
-    padding: 5rem 0 4rem;
-    border-bottom: 1px solid var(--cinza-medio);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.5rem;
+    align-items: start;
+    color: var(--texto);
   }
 
-  .hero-inner {
-    max-width: 700px;
+  .hero.sem-imagem { grid-template-columns: 1fr; }
+
+  .hero-imagem {
+    position: relative;
+    overflow: hidden;
   }
 
-  .hero-tag {
-    display: inline-block;
+  .hero-imagem img {
+    width: 100%;
+    height: 340px;
+    object-fit: cover;
+    display: block;
+  }
+
+  .img-vazio {
+    width: 100%;
+    height: 340px;
     background: var(--laranja-claro);
-    color: var(--laranja-escuro);
-    font-size: 0.8rem;
-    font-weight: 600;
-    padding: 0.3rem 0.8rem;
-    border-radius: 999px;
-    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .img-vazio span {
     font-family: var(--fonte-corpo);
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: var(--laranja-escuro);
+    opacity: 0.6;
+  }
+
+  .hero-badge {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    background: var(--laranja);
+    color: white;
+    font-family: var(--fonte-corpo);
+    font-size: 0.65rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    padding: 0.3rem 0.65rem;
+    border-radius: 4px;
+  }
+
+  .hero-texto {
+    display: flex;
+    flex-direction: column;
+    padding-top: 0.5rem;
+  }
+
+  .hero-label {
+    font-family: var(--fonte-corpo);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--laranja);
+    margin-bottom: 0.75rem;
   }
 
   .hero-titulo {
-    font-size: clamp(2rem, 5vw, 3.5rem);
-    font-weight: 800;
+    font-family: var(--fonte-titulo);
+    font-size: 2.8rem;
+    font-weight: 900;
     line-height: 1.15;
-    margin-bottom: 1.5rem;
     color: var(--texto);
+    margin-bottom: 1rem;
+    transition: color 0.15s;
   }
 
-  .destaque {
-    color: var(--laranja);
-  }
+  .hero:hover .hero-titulo { color: var(--laranja-escuro); }
 
   .hero-desc {
-    font-size: 1.1rem;
-    line-height: 1.7;
-    color: var(--texto-suave);
-    margin-bottom: 2rem;
-    max-width: 580px;
-  }
-
-  .hero-ctas {
-    display: flex;
-    gap: 1rem;
-    flex-wrap: wrap;
-  }
-
-  .btn-primario {
-    background: var(--laranja);
-    color: white;
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    font-weight: 600;
     font-family: var(--fonte-corpo);
-    font-size: 0.95rem;
-    transition: background 0.2s;
-    text-decoration: none;
-  }
-
-  .btn-primario:hover {
-    background: var(--laranja-escuro);
-    color: white;
-  }
-
-  .btn-secundario {
-    background: white;
-    color: var(--laranja);
-    border: 2px solid var(--laranja);
-    padding: 0.75rem 1.5rem;
-    border-radius: 8px;
-    font-weight: 600;
-    font-family: var(--fonte-corpo);
-    font-size: 0.95rem;
-    transition: all 0.2s;
-    text-decoration: none;
-  }
-
-  .btn-secundario:hover {
-    background: var(--laranja-claro);
-  }
-
-  .secoes {
-    padding: 4rem 0;
-  }
-
-  .secoes-titulo {
-    font-size: 1.5rem;
-    margin-bottom: 2rem;
-    color: var(--texto);
-  }
-
-  .secoes-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1.5rem;
-  }
-
-  .secao-card {
-    border: 1px solid var(--cinza-medio);
-    border-radius: 12px;
-    padding: 1.75rem;
-    text-decoration: none;
-    color: var(--texto);
-    transition: all 0.2s;
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-    background: white;
-  }
-
-  .secao-card:hover:not(.em-breve) {
-    border-color: var(--laranja);
-    transform: translateY(-3px);
-    box-shadow: 0 8px 24px rgba(249, 115, 22, 0.1);
-  }
-
-  .secao-card.em-breve {
-    opacity: 0.6;
-    cursor: default;
-  }
-
-  .secao-icon {
-    font-size: 2rem;
-  }
-
-  .secao-card h3 {
     font-size: 1.1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-  }
-
-  .secao-card p {
-    font-size: 0.9rem;
     color: var(--texto-suave);
     line-height: 1.6;
-    flex: 1;
+    margin-bottom: 1rem;
   }
 
-  .secao-link {
-    font-size: 0.85rem;
-    color: var(--laranja);
-    font-weight: 600;
-    margin-top: auto;
-  }
-
-  .badge {
-    font-size: 0.65rem;
-    background: var(--cinza-medio);
-    color: var(--texto-suave);
-    padding: 0.15rem 0.5rem;
-    border-radius: 999px;
-    font-weight: 400;
+  /* ── Atribuição ── */
+  .atrib {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
     font-family: var(--fonte-corpo);
+    font-size: 0.9rem;
+    color: var(--texto-suave);
+  }
+
+  .fonte-laranja { color: var(--laranja); font-weight: 500; }
+  .ponto { opacity: 0.4; }
+
+  /* ── Divisor ── */
+  .divisor {
+    height: 1px;
+    background: var(--texto);
+    opacity: 0.12;
+    margin: 0 0 1.5rem;
+  }
+
+  /* ── Colunas ── */
+  .bloco-colunas {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+  }
+
+  .coluna {
+    padding: 0 1.5rem 0 0;
+    border-right: 1px solid var(--borda);
+  }
+
+  .coluna:first-child { padding-left: 0; }
+
+  .coluna:last-child {
+    border-right: none;
+    padding-right: 0;
+    padding-left: 1.5rem;
+  }
+
+  .coluna:nth-child(2) { padding-left: 1.5rem; }
+
+  .col-header {
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--texto);
+  }
+
+  .col-titulo {
+    display: block;
+    font-family: var(--fonte-corpo);
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--texto);
+    margin-bottom: 0.2rem;
+    transition: color 0.15s;
+  }
+
+  .col-titulo:hover { color: var(--laranja); }
+
+  .col-desc {
+    font-family: var(--fonte-corpo);
+    font-size: 0.9rem;
+    color: var(--texto-suave);
+    font-style: italic;
+  }
+
+  /* Card com imagem */
+  .col-card {
+    display: block;
+    color: var(--texto);
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--borda);
+  }
+
+  .col-card-img {
+    margin-bottom: 0.6rem;
+    overflow: hidden;
+  }
+
+  .col-card-img img {
+    width: 100%;
+    height: 160px;
+    object-fit: cover;
+    display: block;
+  }
+
+  .img-vazio-sm {
+    width: 100%;
+    height: 160px;
+    background: var(--laranja-claro);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .img-vazio-sm span {
+    font-family: var(--fonte-corpo);
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    color: var(--laranja-escuro);
+    opacity: 0.5;
+  }
+
+  .col-card-titulo {
+    font-family: var(--fonte-titulo);
+    font-size: 1.2rem;
+    font-weight: 700;
+    line-height: 1.35;
+    color: var(--texto);
+    margin-bottom: 0.4rem;
+    transition: color 0.15s;
+  }
+
+  .col-card:hover .col-card-titulo { color: var(--laranja-escuro); }
+
+  /* Lista de itens */
+  .col-lista {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .col-item {
+    display: block;
+    color: var(--texto);
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--borda);
+    transition: color 0.15s;
+  }
+
+  .col-item:last-child { border-bottom: none; }
+
+  .col-item-titulo {
+    font-family: var(--fonte-titulo);
+    font-size: 1.08rem;
+    font-weight: 700;
+    line-height: 1.35;
+    color: var(--texto);
+    margin-bottom: 0.3rem;
+    transition: color 0.15s;
+  }
+
+  .col-item:hover .col-item-titulo { color: var(--laranja-escuro); }
+
+  .sem-conteudo {
+    font-family: var(--fonte-corpo);
+    font-size: 0.96rem;
+    color: var(--texto-suave);
+    font-style: italic;
+    padding: 1rem 0;
+  }
+
+  @media (max-width: 900px) {
+    .hero { grid-template-columns: 1fr; }
+    .bloco-colunas { grid-template-columns: 1fr; }
+    .coluna {
+      padding: 1.5rem 0;
+      border-right: none;
+      border-bottom: 1px solid var(--borda);
+    }
+    .coluna:last-child { border-bottom: none; }
   }
 </style>

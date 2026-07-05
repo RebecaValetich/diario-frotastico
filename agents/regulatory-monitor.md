@@ -25,7 +25,7 @@ Estrutura:
 ## 🇧🇷 Regulatório
 
 ### [Título do item]
-[2–3 frases: o que mudou + impacto operacional para frotas]
+[8–12 frases, fiel ao texto extraído da página de origem — nunca inferido ou inventado a partir do título]
 Fonte: [Nome] | [link]
 ```
 
@@ -34,6 +34,10 @@ Máximo: 3 itens por dia. Se não houver novidade relevante, emitir:
 ## 🇧🇷 Regulatório
 Sem novidades regulatórias relevantes nas últimas 48h.
 ```
+
+## Regra de fidelidade do resumo
+
+O resumo é gerado a partir do texto completo extraído da página de origem — nunca a partir só do título. Se o scraping falhar (paywall, JS-rendering, texto insuficiente), o item não recebe resumo inventado: o corpo publicado indica que a notícia deve ser lida na fonte original, com o link de referência.
 
 ## Critério de relevância
 

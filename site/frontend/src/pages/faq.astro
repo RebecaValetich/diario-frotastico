@@ -1,0 +1,104 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const perguntas = [
+  {
+    pergunta: 'O que é o Diário Frotástico?',
+    resposta: 'É um briefing de inteligência de mercado gerado automaticamente todos os dias para o time Frota 162. Monitora regulações, concorrentes e movimentos do ecossistema de gestão de frotas no Brasil e no mundo.',
+  },
+  {
+    pergunta: 'Com que frequência as notícias são atualizadas?',
+    resposta: 'O agente roda diariamente às 7h. As notícias publicadas no dia aparecem no topo de cada seção.',
+  },
+  {
+    pergunta: 'Quais são as seções do Diário?',
+    resposta: 'Mercado — movimentos de concorrentes, lançamentos e tendências. Órgãos Públicos — ANTT, CONTRAN, Senatran e mudanças regulatórias. Startups/VC — captações, fusões e novos players do ecossistema.',
+  },
+  {
+    pergunta: 'Como o conteúdo é gerado?',
+    resposta: 'Agentes Python buscam notícias via Google News RSS, filtram com Claude (Haiku) para selecionar o que é relevante para gestão de frotas, e publicam automaticamente neste site.',
+  },
+  {
+    pergunta: 'Posso confiar nos links das notícias?',
+    resposta: 'Os links apontam para as fontes originais (G1, Valor Econômico, blogs de concorrentes etc.). O Diário não produz conteúdo jornalístico próprio — é um agregador de inteligência.',
+  },
+  {
+    pergunta: 'Quem mantém o Diário Frotástico?',
+    resposta: 'É um projeto interno do time de Produto da Frota 162.',
+  },
+];
+---
+
+<BaseLayout title="FAQ">
+  <div class="pagina">
+    <header class="secao-header">
+      <h1>FAQ</h1>
+      <p>Perguntas frequentes sobre o Diário Frotástico.</p>
+    </header>
+
+    <div class="lista-faq">
+      {perguntas.map((item) => (
+        <div class="faq-item">
+          <h2 class="faq-pergunta">{item.pergunta}</h2>
+          <p class="faq-resposta">{item.resposta}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .pagina {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 3rem 2rem 4rem;
+  }
+
+  .secao-header {
+    border-bottom: 3px solid var(--laranja);
+    padding-bottom: 0.875rem;
+    margin-bottom: 2.5rem;
+  }
+
+  .secao-header h1 {
+    font-family: var(--fonte-titulo);
+    font-size: 2rem;
+    font-weight: 900;
+    margin-bottom: 0.3rem;
+    color: var(--texto);
+  }
+
+  .secao-header p {
+    font-family: var(--fonte-corpo);
+    font-size: 0.85rem;
+    color: var(--texto-suave);
+  }
+
+  .lista-faq {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .faq-item {
+    padding: 1.5rem 0;
+    border-bottom: 1px solid var(--borda);
+  }
+
+  .faq-item:last-child { border-bottom: none; }
+
+  .faq-pergunta {
+    font-family: var(--fonte-titulo);
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--texto);
+    margin-bottom: 0.6rem;
+  }
+
+  .faq-resposta {
+    font-family: var(--fonte-corpo);
+    font-size: 0.9rem;
+    color: var(--texto-suave);
+    line-height: 1.7;
+  }
+</style>
