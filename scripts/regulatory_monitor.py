@@ -218,8 +218,12 @@ NOTICIAS:
 
 
 def normalizar_titulo(titulo: str) -> str:
-    """Normaliza titulo pra comparacao (lowercase, sem acento/pontuacao, espacos colapsados)."""
+    """Normaliza titulo pra comparacao (lowercase, sem acento/pontuacao, espacos colapsados).
+    Remove tambem sufixo de fonte que o Google News as vezes agrega ao titulo
+    (ex: "Titulo - in.gov.br", "Titulo - g1.globo.com"), que senao faz o mesmo
+    ato oficial parecer um titulo diferente de um dia pro outro."""
     t = (titulo or "").lower().strip()
+    t = re.sub(r'\s*-\s*[a-z0-9.]+\.(gov\.br|com\.br|org\.br|com|org|br)\s*$', '', t)
     t = re.sub(r'[^a-z0-9áàâãéêíóôõúüç ]', '', t)
     t = re.sub(r'\s+', ' ', t)
     return t
@@ -267,7 +271,12 @@ def carregar_publicados_recentes(dias: int = DEDUP_DIAS) -> dict:
 def ja_publicado(noticia: dict, publicados: dict) -> bool:
     if noticia.get("link") and noticia["link"] in publicados["links"]:
         return True
-    return normalizar_titulo(noticia.get("titulo", "")) in publicados["titulos"]
+    tnorm = normalizar_titulo(noticia.get("titulo", ""))
+    if tnorm in publicados["titulos"]:
+        return True
+    # fallback: titulo eh prefixo/contido em um titulo ja publicado — cobre variacoes
+    # tipo "Titulo X" vs "Titulo X - Fonte" que a normalizacao acima nao pegou
+    return any(len(tnorm) > 15 and len(t) > 15 and (tnorm in t or t in tnorm) for t in publicados["titulos"])
 
 
 FALLBACK_BODY = (
