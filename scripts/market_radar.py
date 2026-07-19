@@ -10,7 +10,7 @@ import json
 import requests
 import xml.etree.ElementTree as ET
 from bs4 import BeautifulSoup
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from dateutil import parser as date_parser
 from dotenv import load_dotenv
 import anthropic
@@ -19,6 +19,7 @@ from urllib.parse import quote, urljoin
 load_dotenv()
 
 JANELA_HORAS = 24  # só considera notícias publicadas nas últimas N horas
+DEDUP_DIAS = 30  # não republica uma notícia já publicada nos últimos N dias
 
 
 def dentro_da_janela(data_str: str, horas: int = JANELA_HORAS) -> bool:
@@ -351,6 +352,59 @@ Captação, Fusão, Parceria, Concorrência, Logística, Segurança, Regulação
         return []
 
 
+def normalizar_titulo(titulo: str) -> str:
+    """Normaliza título pra comparação (lowercase, sem acento/pontuação, espaços colapsados)."""
+    t = (titulo or "").lower().strip()
+    t = re.sub(r'[^a-z0-9áàâãéêíóôõúüç ]', '', t)
+    t = re.sub(r'\s+', ' ', t)
+    return t
+
+
+def carregar_publicados_recentes(dias: int = DEDUP_DIAS) -> dict:
+    """Lê os .md já publicados em mercado/ nos últimos N dias e indexa
+    título normalizado + link, pra não republicar a mesma notícia só porque
+    o Google News ou um blog reindexou a página com uma data 'fresca'."""
+    pasta = os.path.join(os.path.dirname(__file__), "..", "site", "frontend", "src", "content", "mercado")
+    titulos, links = set(), set()
+    if not os.path.isdir(pasta):
+        return {"titulos": titulos, "links": links}
+
+    limite = datetime.now(timezone.utc) - timedelta(days=dias)
+    for nome_arquivo in os.listdir(pasta):
+        if not nome_arquivo.endswith(".md"):
+            continue
+
+        # slug segue o padrão YYYY-MM-DD-NN.md — usa isso pra saber a idade do arquivo.
+        # Se o nome não seguir o padrão, ainda assim confere o conteúdo (não ignora às cegas).
+        data_slug = nome_arquivo[:10]
+        try:
+            if datetime.strptime(data_slug, "%Y-%m-%d").replace(tzinfo=timezone.utc) < limite:
+                continue
+        except ValueError:
+            pass
+
+        try:
+            with open(os.path.join(pasta, nome_arquivo), "r", encoding="utf-8") as f:
+                conteudo = f.read()
+        except Exception:
+            continue
+
+        m_titulo = re.search(r'^title:\s*"(.*)"\s*$', conteudo, re.MULTILINE)
+        m_link = re.search(r'^linkOriginal:\s*"(.*)"\s*$', conteudo, re.MULTILINE)
+        if m_titulo:
+            titulos.add(normalizar_titulo(m_titulo.group(1)))
+        if m_link and m_link.group(1):
+            links.add(m_link.group(1))
+
+    return {"titulos": titulos, "links": links}
+
+
+def ja_publicado(noticia: dict, publicados: dict) -> bool:
+    if noticia.get("link") and noticia["link"] in publicados["links"]:
+        return True
+    return normalizar_titulo(noticia.get("titulo", "")) in publicados["titulos"]
+
+
 FALLBACK_BODY = (
     "**Esta notícia deve ser acessada diretamente no site de origem.** "
     "Não foi possível carregar o conteúdo completo automaticamente para gerar um resumo fiel — "
@@ -513,6 +567,13 @@ def main():
 
     noticias_filtradas = sintetizar_com_claude(noticias_mercado, noticias_concorrentes)
     print(f"   {len(noticias_filtradas)} notícias relevantes selecionadas.")
+
+    publicados = carregar_publicados_recentes()
+    antes_dedup = len(noticias_filtradas)
+    noticias_filtradas = [n for n in noticias_filtradas if not ja_publicado(n, publicados)]
+    descartadas_dedup = antes_dedup - len(noticias_filtradas)
+    if descartadas_dedup:
+        print(f"   {descartadas_dedup} descartadas por já terem sido publicadas nos últimos {DEDUP_DIAS} dias.")
 
     if noticias_filtradas:
         print("   Resolvendo URLs, buscando imagens e extraindo texto completo...")
