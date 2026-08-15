@@ -14,6 +14,7 @@ from dateutil import parser as date_parser
 from dotenv import load_dotenv
 import anthropic
 from urllib.parse import quote
+from googlenewsdecoder import gnewsdecoder
 
 load_dotenv()
 
@@ -114,16 +115,30 @@ def enriquecer_noticia(noticia: dict) -> dict:
     noticia["texto_completo"] = None
     if not url:
         return noticia
+
+    # Links do Google News RSS (/rss/articles/...) são uma página-wrapper que
+    # só redireciona para a fonte via JS no navegador — requests não segue
+    # esse redirect, e o wrapper pode falhar ao ser aberto depois (interstitial
+    # expira/quebra). Decodifica pra sempre publicar a URL real da fonte.
+    if "news.google.com" in url:
+        try:
+            decodificado = gnewsdecoder(url)
+            if decodificado.get("status") and decodificado.get("decoded_url"):
+                url = decodificado["decoded_url"]
+                noticia["link"] = url
+        except Exception:
+            pass
+
     try:
         response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"},
                                 allow_redirects=True, timeout=10)
         response.raise_for_status()
         noticia["link"] = response.url
 
-        # Se o link não saiu de news.google.com, é a página wrapper do Google
-        # (redirect via JS que o requests não segue) — não é o artigo real.
-        # Nesse caso não extraímos nem imagem nem texto, pra não publicar
-        # o ícone genérico do Google ou um texto que não é da matéria.
+        # Se mesmo após a decodificação o link continua em news.google.com,
+        # não foi possível recuperar a URL real da fonte. Nesse caso não
+        # extraímos nem imagem nem texto, pra não publicar o ícone genérico
+        # do Google ou um texto que não é da matéria.
         link_resolveu = "news.google.com" not in response.url
 
         if link_resolveu:
